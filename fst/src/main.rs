@@ -38,13 +38,9 @@ fn main() {
             fstapi::Hier::Upscope => {
                 scope.pop();
             }
-            fstapi::Hier::Var(v) => {
-                if scope != to_show {
-                    continue;
-                }
-                if v.typ() == fstapi::VarType::VcdParameter {
-                    continue;
-                }
+            fstapi::Hier::Var(v)
+                if scope == to_show && v.typ() != fstapi::VarType::VcdParameter =>
+            {
                 let mut name = scope.clone();
                 name.push(v.name().to_string());
                 if v.is_alias() {
@@ -53,28 +49,30 @@ fn main() {
                     vars.insert(v.handle(), (name, v.typ(), v.length(), vec![]));
                 }
             }
-            fstapi::Hier::Attr(_) => {}
-            fstapi::Hier::AttrEnd => {}
+            _ => {}
         }
         println!("{i}: {:?}", hier);
         i += 1;
     }
 
     println!("\nblocks:");
-    fst.set_limit_time_range(0..240);
+    let end_time = 199.min(fst.end_time());
     let limit_keys: Vec<_> = vars.keys().copied().collect();
     let mut crit_time = vec![];
-    fst.foreach_block(Some(&limit_keys), |time, handle, val| {
-        println!("block: {time} {handle} {val:?}");
-        let v = vars.get_mut(&handle).unwrap();
-        crit_time.push(time);
-        v.3.push((time, val.to_string()));
-    });
+    fst.foreach_block(
+        Some(fst.start_time()..end_time),
+        Some(&limit_keys),
+        |time, handle, val| {
+            println!("block: {time} {handle} {val:?}");
+            let v = vars.get_mut(&handle).unwrap();
+            crit_time.push(time);
+            v.3.push((time, val.to_string()));
+        },
+    );
     crit_time.sort();
     crit_time.dedup();
 
     println!("\nvars:");
-    let end_time = 199.min(fst.end_time());
     {
         println!("$time");
         let mut i = fst.start_time();

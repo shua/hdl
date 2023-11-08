@@ -244,6 +244,9 @@ impl Reader {
         }
     }
 
+    // next_iter iterates in a "lending-iter" style which is borrowing
+    // space from the ReaderCtx, so we unfortunately can't just implement
+    // Iterator without copying/cloning all items.
     pub fn next_hier<'it>(&'it mut self) -> Option<Hier<'it>> {
         let ctx = self.ctx;
         if ctx.is_null() {
@@ -276,9 +279,12 @@ impl Reader {
         unsafe { fstReaderIterateHierRewind(self.ctx) }
     }
 
+    // foreach_block is an "internal-iterator", and accepts a callback for each
+    // element, instead of returning each element.
     pub fn foreach_block(
         &mut self,
-        limit: Option<&[fstHandle]>,
+        time: Option<std::ops::Range<u64>>,
+        handles: Option<&[fstHandle]>,
         mut f: impl FnMut(u64, fstHandle, &str),
     ) -> i32 {
         let mut userdata: &mut dyn FnMut(u64, fstHandle, &str) = &mut f;
@@ -302,13 +308,18 @@ impl Reader {
         // SAFETY: userdata only needs to live the length of the fn call
         // everything else is C ffi
         unsafe {
-            if let Some(handles) = limit {
+            if let Some(handles) = handles {
                 fstReaderClrFacProcessMaskAll(self.ctx);
                 for h in handles {
                     fstReaderSetFacProcessMask(self.ctx, *h);
                 }
             } else {
                 fstReaderSetFacProcessMaskAll(self.ctx);
+            }
+            if let Some(time) = time {
+                fstReaderSetLimitTimeRange(self.ctx, time.start, time.end);
+            } else {
+                fstReaderSetUnlimitedTimeRange(self.ctx);
             }
             fstReaderIterBlocks(
                 self.ctx,
@@ -402,13 +413,6 @@ impl Reader {
                 self.value_from_handle_at_time(tim, i, buf.as_mut_ptr().cast()),
             );
         }
-    }
-
-    pub fn set_limit_time_range(&mut self, range: std::ops::Range<u64>) {
-        unsafe { fstReaderSetLimitTimeRange(self.ctx, range.start, range.end) }
-    }
-    pub fn set_unlimited_time_range(&mut self) {
-        unsafe { fstReaderSetUnlimitedTimeRange(self.ctx) }
     }
 }
 
