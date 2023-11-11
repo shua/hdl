@@ -52,7 +52,7 @@ macro_rules! cenum {
         }
 
         impl $name {
-            const VALUES: [$name; 0 $(+ cenum!(@one $var))*] = [$($name::$var),*];
+            pub const VALUES: [$name; 0 $(+ cenum!(@one $var))*] = [$($name::$var),*];
         }
 
         impl std::str::FromStr for $name {
@@ -505,9 +505,6 @@ pub enum Hier<'rdr> {
 
 impl std::fmt::Debug for Hier<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn cstr<'s>(ptr: *const i8, len: u32) -> &'s str {
-            raw_str(ptr.cast(), Some(len.try_into().unwrap()))
-        }
         match self {
             Hier::Scope(s) => f
                 .debug_struct("Scope")

@@ -7,12 +7,13 @@ fn main() {
         .file("fstapi/lz4.c")
         .file("fstapi/fastlz.c")
         .file("fstapi/fstapi.c")
-        .static_flag(true)
+        // .static_flag(true)
         .warnings(false) // nothing we can do, just noise
         .compile("fstapi");
 
     // this has to go after cc::Build? not sure what is happening
-    println!("cargo:rustc-link-lib=static=z");
+    // tried adding libz-sys as a dependency, but it resulted in linker errors
+    println!("cargo:rustc-link-lib=z");
 
     // generate rust bindings
     let bindings = bindgen::Builder::default()
