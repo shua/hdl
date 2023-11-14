@@ -3,10 +3,10 @@ fn main() {
 
     // build object files from C source
     cc::Build::new()
-        .include("./fstapi")
-        .file("fstapi/lz4.c")
-        .file("fstapi/fastlz.c")
-        .file("fstapi/fstapi.c")
+        .include(".")
+        .file("lz4.c")
+        .file("fastlz.c")
+        .file("fstapi.c")
         // .static_flag(true)
         .warnings(false) // nothing we can do, just noise
         .compile("fstapi");
@@ -17,7 +17,7 @@ fn main() {
 
     // generate rust bindings
     let bindings = bindgen::Builder::default()
-        .header("fstapi/wrapper.h")
+        .header("wrapper.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Couldn't generate fstapi bindings");

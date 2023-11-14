@@ -224,8 +224,10 @@ dependencies = [
 name = "fstapi"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "flate2",
  "libc",
+ "log",
 ]
 
 [[package]]
